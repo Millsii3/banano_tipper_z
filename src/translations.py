@@ -4,7 +4,7 @@ import praw
 
 config = configparser.ConfigParser()
 config.read("tipper.ini")
-
+print(config)
 sql_password = config["SQL"]["sql_password"]
 database_name = config["SQL"]["database_name"]
 tip_bot_on = config["BOT"]["tip_bot_on"]
@@ -30,6 +30,7 @@ try:
         auth_plugin="mysql_native_password",
         database=database_name,
     )
+    mycursor = mydb.cursor()
 except:
     mydb = mysql.connector.connect(
         user="root",
