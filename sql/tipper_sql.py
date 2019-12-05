@@ -256,7 +256,7 @@ def clear_messages():
 
 
 def update_to_nano():
-    sql = "UPDATE accounts SET address = REPLACE(address, 'xrb_', 'nano_')"
+    sql = "UPDATE accounts SET address = REPLACE(address, 'nano_', 'ban_')"
     mycursor.execute(sql)
     mydb.commit()
 
@@ -271,4 +271,3 @@ if __name__=="__main__":
     #history(100)
     #update_percentage()
     #accounts()
-

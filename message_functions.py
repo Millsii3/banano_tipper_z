@@ -1,6 +1,6 @@
 from datetime import datetime
 from helper_functions import parse_text, add_history_record, add_new_account, handle_send_nano
-from rpc_bindings import check_balance, open_or_receive, nano_to_raw
+from rpc_bindings import check_balance, open_or_receive, banoshi_to_raw
 import shared
 
 
@@ -90,8 +90,8 @@ def handle_balance(message):
     if len(result) > 0:
         results = check_balance(result[0][0])
 
-        response = "At address %s:\n\nAvailable: %s Nano\n\nUnpocketed: %s Nano\n\nNano will be pocketed automatically unless the transaction is below 0.0001 Nano." \
-                   "\n\nhttps://nanocrawler.cc/explorer/account/%s" % (result[0][0], results[0]/10**30, results[1]/10**30, result[0][0])
+        response = "At address %s:\n\nAvailable: %s Banano\n\nUnpocketed: %s Banano\n\nBanano will be pocketed automatically unless the transaction is below 0.0001 Banano." \
+                   "\n\nhttps://creeper.banano.cc/explorer/account/%s" % (result[0][0], results[0]/10**30, results[1]/10**30, result[0][0])
 
         return response
     return 'You do not have an open account yet'
@@ -127,8 +127,8 @@ def handle_create(message):
         # reddit.redditor(message_recipient).message(subject, message_text)
 
     else:
-        response = "It looks like you already have an account. In any case it is now **active**. Your Nano address is %s." \
-                   "\n\nhttps://nanocrawler.cc/explorer/account/%s" % (result[0][0], result[0][0])
+        response = "It looks like you already have an account. In any case it is now **active**. Your Banano address is %s." \
+                   "\n\nhttps://creeper.banano.cc/explorer/account/%s" % (result[0][0], result[0][0])
     return response
 
 
@@ -194,11 +194,11 @@ def handle_history(message):
             try:
                 amount = result[2]
                 if (result[1] == 'send') and amount:
-                    amount = int(result[2]) / 10 ** 30
+                    amount = int(result[2]) / 10 ** 29
                     if result[4] == 'sent to registered redditor' or result[4] == 'new user created':
-                        response += '%s: %s | %s Nano to %s | reddit object: %s | %s\n\n' % (result[0], result[1], amount, result[5], result[3], result[4])
+                        response += '%s: %s | %s Banano to %s | reddit object: %s | %s\n\n' % (result[0], result[1], amount, result[5], result[3], result[4])
                     elif result[4] == 'sent to registered address' or result[4] == 'sent to unregistered address':
-                        response += '%s: %s | %s Nano to %s | reddit object: %s | %s\n\n' % (result[0], result[1], amount, result[6], result[3], result[4])
+                        response += '%s: %s | %s Banano to %s | reddit object: %s | %s\n\n' % (result[0], result[1], amount, result[6], result[3], result[4])
                 elif (result[1] == 'send'):
                     response += '%s: %s | reddit object: %s | %s\n\n' % (
                     result[0], result[1], result[3], result[4])
@@ -247,8 +247,8 @@ def handle_minimum(message):
         return response
 
     # check that it's greater than 0.01
-    if nano_to_raw(amount) < nano_to_raw(shared.program_minimum):
-        response = "Did not update. The amount you specified is below the program minimum of %s Nano."%shared.program_minimum
+    if banoshi_to_raw(amount) < banoshi_to_raw(shared.program_minimum):
+        response = "Did not update. The amount you specified is below the program minimum of %s Banano."%shared.program_minimum
         return response
 
     # check if the user is in the database
@@ -262,7 +262,7 @@ def handle_minimum(message):
         add_history_record(
             username=username,
             action='minimum',
-            amount=nano_to_raw(amount),
+            amount=banoshi_to_raw(amount),
             address=result[0][0],
             comment_or_message='message',
             comment_id=message.name,
@@ -270,7 +270,7 @@ def handle_minimum(message):
             comment_text=str(message.body)[:255]
         )
         sql = "UPDATE accounts SET minimum = %s WHERE username = %s"
-        val = (str(nano_to_raw(amount)), username)
+        val = (str(banoshi_to_raw(amount)), username)
         shared.mycursor.execute(sql, val)
         shared.mydb.commit()
         response = "Updating tip minimum to %s"%amount
@@ -280,7 +280,7 @@ def handle_minimum(message):
             username=username,
             action='minimum',
             reddit_time=message_time.strftime('%Y-%m-%d %H:%M:%S'),
-            amount=nano_to_raw(amount),
+            amount=banoshi_to_raw(amount),
             comment_id=message.name,
             comment_text=str(message.body)[:255]
         )
@@ -313,9 +313,9 @@ def handle_receive(message):
             comment_id=message.name,
             comment_or_message='message'
         )
-        response = "At address %s, you currently have %s Nano available, and %s Nano unpocketed. If you have any unpocketed, create a new " \
-                   "message containing the word 'receive'\n\nhttps://nanocrawler.cc/explorer/account/%s" % (
-                   address, balance[0] / 10 ** 30, balance[1] / 10 ** 30, address)
+        response = "At address %s, you currently have %s Banano available, and %s Banano unpocketed. If you have any unpocketed, create a new " \
+                   "message containing the word 'receive'\n\nhttps://creeper.banano.cc/explorer/account/%s" % (
+                   address, balance[0] / 10 ** 29, balance[1] / 10 ** 29, address)
         return response
     else:
         add_history_record(

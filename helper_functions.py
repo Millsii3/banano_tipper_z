@@ -1,7 +1,7 @@
 import time
 from datetime import datetime
 import shared
-from rpc_bindings import generate_account, nano_to_raw, check_balance, validate_address
+from rpc_bindings import generate_account, banoshi_to_raw, check_balance, validate_address
 from rpc_bindings import send_w as send
 from requests import Request, Session
 from requests.exceptions import ConnectionError, Timeout, TooManyRedirects
@@ -44,7 +44,7 @@ def add_new_account(username):
     private = address['private']
     address = address['account']
     sql = "INSERT INTO accounts (username, private_key, address, minimum, auto_receive, silence, active, percentage) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
-    val = (username, private, address, nano_to_raw(shared.recipient_minimum), True, False, False, 10)
+    val = (username, private, address, banoshi_to_raw(shared.recipient_minimum), True, False, False, 10)
     shared.mycursor.execute(sql, val)
     shared.mydb.commit()
     return address
@@ -78,14 +78,7 @@ def check_registered_by_address(address):
     address = address.split('_')[1]
 
     sql = "SELECT username FROM accounts WHERE address=%s"
-    val = ('xrb_' + address, )
-    shared.mycursor.execute(sql, val)
-    result = shared.mycursor.fetchall()
-    if len(result) > 0:
-        return result[0][0]
-
-    sql = "SELECT username FROM accounts WHERE address=%s"
-    val = ('nano_' + address, )
+    val = ('ban_' + address, )
     shared.mycursor.execute(sql, val)
     result = shared.mycursor.fetchall()
     if len(result) > 0:
@@ -118,7 +111,7 @@ def get_user_settings(recipient_username, recipient_address=''):
 
 def handle_send_nano(message, parsed_text, comment_or_message):
     """
-    parses tip amount and users from a reddit !nano_tip or PM Send command and performs the transaction. Returns a list
+    parses tip amount and users from a reddit !ban or PM Send command and performs the transaction. Returns a list
     with status information
     :param message: reddit comment or message object
     :param parsed_text: list
@@ -186,7 +179,7 @@ def handle_send_nano(message, parsed_text, comment_or_message):
     if parsed_text[1][-3:].lower() in shared.excluded_redditors:
 
         currency = parsed_text[1][-3:].upper()
-        url = 'https://min-api.cryptocompare.com/data/price?fsym={}&tsyms={}'.format('NANO', currency)
+        url = 'https://min-api.cryptocompare.com/data/price?fsym={}&tsyms={}'.format('BANANO', currency)
         try:
             results = requests.get(url, timeout=1)
             results = json.loads(results.text)
@@ -225,7 +218,7 @@ def handle_send_nano(message, parsed_text, comment_or_message):
             return [response, 2, None, None, None, None]
     else:
         try:
-            amount = nano_to_raw(float(amount)/conversion)
+            amount = banoshi_to_raw(float(amount)/conversion)
         except:
             sql = "UPDATE history SET notes = %s WHERE id = %s"
             val = ('could not parse amount', entry_id)
@@ -234,12 +227,12 @@ def handle_send_nano(message, parsed_text, comment_or_message):
             response = "Could not read your tip or send amount. Is '%s' a number, or is the currency code valid?" % amount
             return [response, 1, None, None, None, None]
 
-    if amount < nano_to_raw(shared.program_minimum):
+    if amount < banoshi_to_raw(shared.program_minimum):
         sql = "UPDATE history SET notes = %s WHERE id = %s"
         val = ('amount below program limit', entry_id)
         shared.mycursor.execute(sql, val)
         shared.mydb.commit()
-        response = 'Program minimum is %s Nano.' % shared.program_minimum
+        response = 'Program minimum is %s Banano.' % shared.program_minimum
         return [response, 3, amount / 10**30, None, None, None]
 
     # check to see if it is a friendly subreddit
@@ -253,8 +246,8 @@ def handle_send_nano(message, parsed_text, comment_or_message):
         else:
             subreddit_status = results[0][0]
         if subreddit_status != 'friendly':
-            if amount < nano_to_raw(1):
-                response = 'To tip in unfamiliar subreddits, the tip amount must be 1 Nano or more. You attempted to tip %s Nano'%(amount/10**30)
+            if amount < banoshi_to_raw(1):
+                response = 'To tip in unfamiliar subreddits, the tip amount must be 1 Banano or more. You attempted to tip %s Banano'%(amount/10**30)
                 return [response, 3, None, None, None, None]
 
 
@@ -269,7 +262,7 @@ def handle_send_nano(message, parsed_text, comment_or_message):
         shared.mycursor.execute(sql, val)
         shared.mydb.commit()
         response = 'You do not have a tip bot account yet. PM me "create".'
-        return [response, 2, amount / 10 ** 30, None, None, None]
+        return [response, 2, amount / 10 ** 29, None, None, None]
     else:
         address = result[0][0]
         private_key = result[0][1]
@@ -280,7 +273,7 @@ def handle_send_nano(message, parsed_text, comment_or_message):
             shared.mycursor.execute(sql, val)
             shared.mydb.commit()
             response = 'You have insufficient funds. Please check your balance.'
-            return [response, 4, amount / 10 ** 30, None, None, None]
+            return [response, 4, amount / 10 ** 29, None, None, None]
 
     # if the command was from a PM, extract the recipient username or address
     # otherwise it was a comment, and extract the parent author
@@ -292,14 +285,14 @@ def handle_send_nano(message, parsed_text, comment_or_message):
             shared.mycursor.execute(sql, val)
             shared.mydb.commit()
             response = "You must specify an amount and a user."
-            return [response, 5, amount / 10 ** 30, None, None, None]
+            return [response, 5, amount / 10 ** 29, None, None, None]
         # remove the /u/ or u/
         if recipient[:3].lower() == '/u/':
             recipient = recipient[3:]
         elif recipient[:2].lower() == 'u/':
             recipient = recipient[2:]
         # recipient -- first check if it is a valid address. Otherwise, check if it's a redditor
-        if (recipient[:5].lower() == "nano_") or (recipient[:4].lower() == "xrb_"):
+        if (recipient[:4].lower() == "ban_"):
             # check valid address
             success = validate_address(recipient)
             if success['valid'] == '1':
@@ -317,7 +310,7 @@ def handle_send_nano(message, parsed_text, comment_or_message):
                     shared.mydb.commit()
 
                     response = '%s is neither a valid address nor a redditor' % recipient
-                    return [response, 6, amount / 10 ** 30, None, None, None]
+                    return [response, 6, amount / 10 ** 29, None, None, None]
         else:
             # a username was specified
             try:
@@ -329,7 +322,7 @@ def handle_send_nano(message, parsed_text, comment_or_message):
                 shared.mycursor.execute(sql, val)
                 shared.mydb.commit()
                 response = "Could not find redditor %s. Make sure you aren't writing or copy/pasting markdown." % recipient
-                return [response, 7, amount / 10 ** 30, None, None, None]
+                return [response, 7, amount / 10 ** 29, None, None, None]
     elif parsed_text[0].lower() in shared.donate_commands:
         # if there is no nanocenter name specified, return an error
         if len(parsed_text) < 3:
@@ -338,7 +331,7 @@ def handle_send_nano(message, parsed_text, comment_or_message):
             shared.mycursor.execute(sql, val)
             shared.mydb.commit()
             response = "You must specify an amount and a NanoCenter project."
-            return [response, 5, amount / 10 ** 30, None, None, None]
+            return [response, 5, amount / 10 ** 29, None, None, None]
 
         sql = "SELECT address FROM projects WHERE project=%s"
         val = (parsed_text[2].lower(), )
@@ -354,7 +347,7 @@ def handle_send_nano(message, parsed_text, comment_or_message):
             shared.mycursor.execute(sql, val)
             shared.mydb.commit()
             response = "The NanoCenter project you specified does not exist."
-            return [response, 5, amount / 10 ** 30, None, None, None]
+            return [response, 5, amount / 10 ** 29, None, None, None]
 
         # if the nanocenter address is not valid, return an error message
         if validate_address(address)['valid'] != '1':
@@ -362,8 +355,8 @@ def handle_send_nano(message, parsed_text, comment_or_message):
             val = ("nanocenter address invalid", entry_id)
             shared.mycursor.execute(sql, val)
             shared.mydb.commit()
-            response = "The Nano address associated with this NanoCenter project is not valid."
-            return [response, 6, amount / 10 ** 30, None, None, None]
+            response = "The Banano address associated with this NanoCenter project is not valid."
+            return [response, 6, amount / 10 ** 29, None, None, None]
     else:
         recipient = str(message.parent().author)
         user_or_address = 'user'
@@ -400,7 +393,7 @@ def handle_send_nano(message, parsed_text, comment_or_message):
     #   create a new address for the redditor and send
     if recipient_username in shared.excluded_redditors:
         response = "Sorry, the redditor '%s' is in the list of excluded addresses. More than likely you didn't intend to send to that user." % (recipient_username)
-        return [response, 0, amount / 10 ** 30, recipient_username, recipient_address, None]
+        return [response, 0, amount / 10 ** 29, recipient_username, recipient_address, None]
 
     if (user_minimum >= 0) and recipient_address and recipient_username:
         if amount < user_minimum:
@@ -409,8 +402,8 @@ def handle_send_nano(message, parsed_text, comment_or_message):
             shared.mycursor.execute(sql, val)
             shared.mydb.commit()
             response = "Sorry, the user has set a tip minimum of %s. " \
-                   "Your tip of %s is below this amount." % (user_minimum/10**30, amount/10**30)
-            return [response, 8, amount / 10 ** 30, recipient_username, recipient_address, None]
+                   "Your tip of %s is below this amount." % (user_minimum/10**29, amount/10**29)
+            return [response, 8, amount / 10 ** 29, recipient_username, recipient_address, None]
 
 
         if user_or_address == 'user':
@@ -424,7 +417,7 @@ def handle_send_nano(message, parsed_text, comment_or_message):
         val = (notes, address, username, recipient_username, recipient_address, str(amount), entry_id)
         shared.mycursor.execute(sql, val)
         shared.mydb.commit()
-        print("Sending Nano: ", address, private_key, amount, recipient_address, recipient_username)
+        print("Sending Banano: ", address, private_key, amount, recipient_address, recipient_username)
         t0 = time.time()
         sent = send(address, private_key, amount, recipient_address)
         print(time.time()-t0)
@@ -435,10 +428,10 @@ def handle_send_nano(message, parsed_text, comment_or_message):
 
         if comment_or_message == "message" and (not silence):
             message_recipient = str(recipient_username)
-            subject = 'You just received a new Nano tip!'
+            subject = 'You just received a new Banano tip!'
             message_text = shared.new_tip % (
-                        amount / 10 ** 30, recipient_address, receiving_new_balance[0] / 10 ** 30,
-                        (receiving_new_balance[1] / 10 ** 30 + amount / 10 ** 30), sent['hash']) + shared.comment_footer
+                        amount / 10 ** 29, recipient_address, receiving_new_balance[0] / 10 ** 29,
+                        (receiving_new_balance[1] / 10 ** 29 + amount / 10 ** 29), sent['hash']) + shared.comment_footer
 
             sql = "INSERT INTO messages (username, subject, message) VALUES (%s, %s, %s)"
             val = (message_recipient, subject, message_text)
@@ -446,21 +439,21 @@ def handle_send_nano(message, parsed_text, comment_or_message):
             shared.mydb.commit()
 
         if user_or_address == 'user':
-            print('Amount: ', amount / 10 ** 30)
-            print('Formatted: %.4f' % (amount / 10 ** 30))
+            print('Amount: ', amount / 10 ** 29)
+            print('Formatted: %.4f' % (amount / 10 ** 29))
             if silence:
-                response = "Sent ```%.4g Nano``` to %s -- [Transaction on Nano Crawler](https://nanocrawler.cc/explorer/block/%s)" % (
-                       amount / 10 ** 30, recipient_username, sent['hash'])
-                return [response, 9, amount / 10 ** 30, recipient_username, recipient_address, sent['hash']]
+                response = "Sent ```%.4g Banano``` to %s -- [Transaction on Banano Creeper](https://creeper.banano.cc/explorer/block/%s)" % (
+                       amount / 10 ** 29, recipient_username, sent['hash'])
+                return [response, 9, amount / 10 ** 29, recipient_username, recipient_address, sent['hash']]
             else:
-                response = "Sent ```%.4g Nano``` to /u/%s -- [Transaction on Nano Crawler](https://nanocrawler.cc/explorer/block/%s)" % (
-                       amount / 10 ** 30, recipient_username, sent['hash'])
-                return [response, 10, amount / 10 ** 30, recipient_username, recipient_address, sent['hash']]
+                response = "Sent ```%.4g Banano``` to /u/%s -- [Transaction on Banano Creeper](https://creeper.banano.cc/explorer/block/%s)" % (
+                       amount / 10 ** 29, recipient_username, sent['hash'])
+                return [response, 10, amount / 10 ** 29, recipient_username, recipient_address, sent['hash']]
         else:
-            response = "Sent ```%.4g Nano``` to [%s](https://nanocrawler.cc/explorer/account/%s) -- " \
-                   "[Transaction on Nano Crawler](https://nanocrawler.cc/explorer/block/%s)" % (
-                   amount / 10 ** 30, recipient_address, recipient_address, sent['hash'])
-            return [response, 11, amount / 10 ** 30, recipient_username, recipient_address, sent['hash']]
+            response = "Sent ```%.4g Banano``` to [%s](https://creeper.banano.cc/explorer/account/%s) -- " \
+                   "[Transaction on Banano Creeper](https://creeper.banano.cc/explorer/block/%s)" % (
+                   amount / 10 ** 29, recipient_address, recipient_address, sent['hash'])
+            return [response, 11, amount / 10 ** 29, recipient_username, recipient_address, sent['hash']]
 
     elif recipient_address:
         # or if we have an address but no account it might be a nanocenter donation.
@@ -476,8 +469,8 @@ def handle_send_nano(message, parsed_text, comment_or_message):
             val = (sent['hash'], entry_id)
             shared.mycursor.execute(sql, val)
             shared.mydb.commit()
-            response =  "Donated ```%.4g Nano``` to NanoCenter Project [%s](https://nanocrawler.cc/explorer/account/%s). -- [Transaction on Nano Crawler](https://nanocrawler.cc/explorer/block/%s)" % (amount/ 10 ** 30, parsed_text[2], recipient_address, sent['hash'])
-            return [response, 14, amount / 10 ** 30, parsed_text[2], recipient_address, sent['hash']]
+            response =  "Donated ```%.4g Banano``` to NanoCenter Project [%s](https://creeper.banano.cc/explorer/account/%s). -- [Transaction on Banano Creeper](https://creeper.banano.cc/explorer/block/%s)" % (amount/ 10 ** 29, parsed_text[2], recipient_address, sent['hash'])
+            return [response, 14, amount / 10 ** 29, parsed_text[2], recipient_address, sent['hash']]
 
         else:
             sql = "UPDATE history SET notes = %s, address = %s, username = %s, recipient_address = %s, amount = %s WHERE id = %s"
@@ -492,16 +485,16 @@ def handle_send_nano(message, parsed_text, comment_or_message):
             val = (sent['hash'], entry_id)
             shared.mycursor.execute(sql, val)
             shared.mydb.commit()
-            response = "Sent ```%.4g Nano``` to [%s](https://nanocrawler.cc/explorer/account/%s). -- [Transaction on Nano Crawler](https://nanocrawler.cc/explorer/block/%s)" % (
-            amount / 10 ** 30, recipient_address, recipient_address, sent['hash'])
-            return [response, 12, amount / 10 ** 30, recipient_username, recipient_address, sent['hash']]
+            response = "Sent ```%.4g Banano``` to [%s](https://creeper.banano.cc/explorer/account/%s). -- [Transaction on Banano Creeper](https://creeper.banano.cc/explorer/block/%s)" % (
+            amount / 10 ** 29, recipient_address, recipient_address, sent['hash'])
+            return [response, 12, amount / 10 ** 29, recipient_username, recipient_address, sent['hash']]
 
     else:
         # create a new account for redditor
         recipient_address = add_new_account(recipient_username)
         message_recipient = str(recipient_username)
-        subject = 'Congrats on receiving your first Nano Tip!'
-        message_text = shared.welcome_tipped % (amount/ 10 ** 30, recipient_address, recipient_address) + shared.comment_footer
+        subject = 'Congrats on receiving your first Banano Tip!'
+        message_text = shared.welcome_tipped % (amount/ 10 ** 29, recipient_address, recipient_address) + shared.comment_footer
 
         sql = "INSERT INTO messages (username, subject, message) VALUES (%s, %s, %s)"
         val = (message_recipient, subject, message_text)
@@ -522,8 +515,8 @@ def handle_send_nano(message, parsed_text, comment_or_message):
         shared.mydb.commit()
         print("Sending New Account Address: ", address, private_key, amount, recipient_address, recipient_username)
         response = "Creating a new account for /u/%s and "\
-                      "sending ```%.4g Nano```. [Transaction on Nano Crawler](https://nanocrawler.cc/explorer/block/%s)" % (recipient_username, amount / 10 **30, sent['hash'])
-        return [response, 13, amount / 10 ** 30, recipient_username, recipient_address, sent['hash']]
+                      "sending ```%.4g Banano```. [Transaction on Banano Creeper](https://creeper.banano.cc/explorer/block/%s)" % (recipient_username, amount / 10 **30, sent['hash'])
+        return [response, 13, amount / 10 ** 29, recipient_username, recipient_address, sent['hash']]
 
 
 def function_for_test():

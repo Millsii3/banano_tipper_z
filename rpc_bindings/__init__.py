@@ -74,7 +74,7 @@ def send_block(origin, key, amount, destination, rep=None, work=None):
     balance = balance - amount
     previous = info['frontier']
     if rep is None:
-        rep = "xrb_1thingspmippfngcrtk1ofd3uwftffnu4qu9xkauo9zkiuep6iknzci3jxa6"
+        rep = "ban_1thingspmippfngcrtk1ofd3uwftffnu4qu9xkauo9zkiuep6iknzci3jxa6"
     data = {
         "action": "block_create",
         "type": "state",
@@ -107,7 +107,7 @@ def open_block(account, key, rep=None, work=None):
     :return: str block-string for json
     """
     if rep is None:
-        rep = "xrb_1thingspmippfngcrtk1ofd3uwftffnu4qu9xkauo9zkiuep6iknzci3jxa6"
+        rep = "ban_1thingspmippfngcrtk1ofd3uwftffnu4qu9xkauo9zkiuep6iknzci3jxa6"
     try:
         get_previous_hash(account)
         return "Previous block exists. Use receive."
@@ -143,7 +143,7 @@ def receive_block(account, key, sent_hash, rep=None):
     :return: str block-string for json
     """
     if rep is None:
-        rep = "xrb_1thingspmippfngcrtk1ofd3uwftffnu4qu9xkauo9zkiuep6iknzci3jxa6"
+        rep = "ban_1thingspmippfngcrtk1ofd3uwftffnu4qu9xkauo9zkiuep6iknzci3jxa6"
     previous = get_previous_hash(account)
     sent_block = get_block_by_hash(sent_hash)
     sent_previous_hash = sent_block['previous']
@@ -315,7 +315,7 @@ def open_or_receive_blocks(account, key, blocks, rep=None):
 
     work = None
     if rep is None:
-        rep = "xrb_1thingspmippfngcrtk1ofd3uwftffnu4qu9xkauo9zkiuep6iknzci3jxa6"
+        rep = "ban_1thingspmippfngcrtk1ofd3uwftffnu4qu9xkauo9zkiuep6iknzci3jxa6"
 
     # if there is a previous block, receive the blocks
     try:
@@ -358,7 +358,7 @@ def open_or_receive_blocks(account, key, blocks, rep=None):
 def open_or_receive_block(account, key, sent_hash, rep=None):
     work = None
     if rep is None:
-        rep = "xrb_1thingspmippfngcrtk1ofd3uwftffnu4qu9xkauo9zkiuep6iknzci3jxa6"
+        rep = "ban_1thingspmippfngcrtk1ofd3uwftffnu4qu9xkauo9zkiuep6iknzci3jxa6"
 
     # if there is a previous block, receive the blocks
     try:
@@ -401,7 +401,7 @@ def open_or_receive_block(account, key, sent_hash, rep=None):
 
 #data = {
 #        "action": "account_history",
-#        "account": 'xrb_1wnc4mmgizw95up3yshqt7uexmphuz5ezx3o3kb1n1jhh6swbg18o7nrc6zn',
+#        "account": 'ban_1wnc4mmgizw95up3yshqt7uexmphuz5ezx3o3kb1n1jhh6swbg18o7nrc6zn',
 #        "count": "10"
 #    }
 
@@ -410,4 +410,4 @@ def open_or_receive_block(account, key, sent_hash, rep=None):
 #     print(item)
 if __name__=="__main__":
     open_account('nano_1z514qfsnb54tqmu5zrdxcprstr1m4b17ornz8r9km3o3zg6k1a3bshzjswd', 'A3333365E5F27CA63F9389565FE26901886D8E4D71C38A2DF0F0C8F962B2AC32')
-    # send('nano_37w5ticr1xkbxru31insi7izdbnexs6wsfie6j9oh3ya5ydb43iumukftsfk', 'E937F6D3E8BE8444A302ECCA1A80A0C559E7C60F046203B17472B57A31D4ED05', .1, 'xrb_3h6wcsrwq9yowtkjscyswb3z6cddgfxrmn5prw4qro6fgut8dpip8m6ppagt' )
+    # send('nano_37w5ticr1xkbxru31insi7izdbnexs6wsfie6j9oh3ya5ydb43iumukftsfk', 'E937F6D3E8BE8444A302ECCA1A80A0C559E7C60F046203B17472B57A31D4ED05', .1, 'ban_3h6wcsrwq9yowtkjscyswb3z6cddgfxrmn5prw4qro6fgut8dpip8m6ppagt' )

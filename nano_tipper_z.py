@@ -3,7 +3,7 @@ import praw
 import time
 from datetime import datetime
 from time import sleep
-from rpc_bindings import open_account, generate_account, generate_qr, nano_to_raw, receive_all, send_all, \
+from rpc_bindings import open_account, generate_account, generate_qr, banoshi_to_raw, receive_all, send_all, \
     check_balance, validate_address, open_or_receive, get_pendings, open_or_receive_blocks, open_or_receive_block
 from rpc_bindings import send_w as send
 import mysql.connector
@@ -117,7 +117,7 @@ def stream_comments_messages():
 # handles tip commands on subreddits
 def handle_comment(message, parsed_text=None):
     """
-    Prepares a reddit comment starting with !nano_tip to send nano if everything goes well
+    Prepares a reddit comment starting with !ban to send banano if everything goes well
     :param message:
     :param parsed_text
     :return:
@@ -163,29 +163,29 @@ def handle_comment(message, parsed_text=None):
     # otherwise, if the subreddit is friendly (and reply is not top level) or subreddit is minimal
     elif (subreddit_status == 'friendly') or (subreddit_status == 'minimal'):
         if response[1] <= 8:
-            message.reply('^(Tip not sent. Error code )^[%s](https://github.com/danhitchcock/nano_tipper_z#error-codes) ^- [^(Nano Tipper)](https://github.com/danhitchcock/nano_tipper_z)'
+            message.reply('^(Tip not sent. Error code )^[%s](https://github.com/bananocoin/banano_tipper_z#error-codes) ^- [^(Banano Tipper)](https://github.com/bananocoin/banano_tipper_z)'
                           % response[1])
         elif (response[1] == 9):
-            message.reply('^[Sent](https://nanocrawler.cc/explorer/block/%s) ^%s ^Nano ^to ^%s ^- [^(Nano Tipper)](https://github.com/danhitchcock/nano_tipper_z)'
+            message.reply('^[Sent](https://creeper.banano.cc/explorer/block/%s) ^%s ^Banano ^to ^%s ^- [^(Banano Tipper)](https://github.com/bananocoin/banano_tipper_z)'
                           % (response[5], response[2], response[3]))
         elif (response[1] == 10) or (response[1] == 13):
             # user didn't request silence or it's a new account, so tag them
             message.reply(
-                '^[Sent](https://nanocrawler.cc/explorer/block/%s) ^%s ^Nano ^to ^(/u/%s) ^- [^(Nano Tipper)](https://github.com/danhitchcock/nano_tipper_z)'
+                '^[Sent](https://creeper.banano.cc/explorer/block/%s) ^%s ^Banano ^to ^(/u/%s) ^- [^(Banano Tipper)](https://github.com/bananocoin/banano_tipper_z)'
                 % (response[5], response[2], response[3]))
         elif (response[1] == 11) or (response[1] == 12):
             # this actually shouldn't ever happen
             message.reply(
-                '^[Sent](https://nanocrawler.cc/explorer/block/%s) ^(%s Nano to %s)' % (response[5], response[2], response[4]))
+                '^[Sent](https://creeper.banano.cc/explorer/block/%s) ^(%s Banano to %s)' % (response[5], response[2], response[4]))
         elif (response[1] == 14):
             message.reply(
-                '^[Sent](https://nanocrawler.cc/explorer/block/%s) ^(%s Nano to NanoCenter Project %s)' % (
+                '^[Sent](https://creeper.banano.cc/explorer/block/%s) ^(%s Banano to NanoCenter Project %s)' % (
                 response[5], response[2], response[3]))
     elif subreddit_status == 'hostile':
         # it's a hostile place, no posts allowed. Will need to PM users
         if response[1] <= 8:
             message_recipient = str(message.author)
-            subject = 'Your Nano tip did not go through'
+            subject = 'Your Banano tip did not go through'
             message_text = response[0] + comment_footer
             sql = "INSERT INTO messages (username, subject, message) VALUES (%s, %s, %s)"
             val = (message_recipient, subject, message_text)
@@ -203,9 +203,9 @@ def handle_comment(message, parsed_text=None):
             # status code 10 means the recipient has not requested silence, so send a message
             if response[1] == 10:
                 message_recipient = response[3]
-                subject = 'You just received a new Nano tip!'
-                message_text = 'Somebody just tipped you ```%s Nano``` at your address %s. ' \
-                               '[Transaction on Nano Crawler](https://nanocrawler.cc/explorer/block/%s)\n\n' \
+                subject = 'You just received a new Banano tip!'
+                message_text = 'Somebody just tipped you ```%s Banano``` at your address %s. ' \
+                               '[Transaction on Banano Creeper](https://creeper.banano.cc/explorer/block/%s)\n\n' \
                                 'To turn off these notifications, reply with "silence yes"' % (
                                 response[2], response[4], response[5]) + comment_footer
 
@@ -271,35 +271,35 @@ def handle_message(message):
     # standard things
     if (parsed_text[0].lower() == 'help') or (parsed_text[0].lower() == '!help'):
         print("Helping")
-        subject = 'Nano Tipper - Help'
+        subject = 'Banano Tipper - Help'
         response = handle_help(message)
     elif (parsed_text[0].lower() == 'balance') or (parsed_text[0].lower() == 'address'):
         print("balance")
-        subject = 'Nano Tipper - Account Balance'
+        subject = 'Banano Tipper - Account Balance'
         response = handle_balance(message)
     elif parsed_text[0].lower() == 'minimum':
         print("Setting Minimum")
-        subject = 'Nano Tipper - Tip Minimum'
+        subject = 'Banano Tipper - Tip Minimum'
         response = handle_minimum(message)
     elif parsed_text[0].lower() == 'percentage' or parsed_text[0].lower() == 'percent':
         print("Setting Percentage")
-        subject = 'Nano Tipper - Returned Tip Percentage for Donation'
+        subject = 'Banano Tipper - Returned Tip Percentage for Donation'
         response = handle_percentage(message)
     elif (parsed_text[0].lower() == 'create') or parsed_text[0].lower() == 'register':
         print("Creating")
-        subject = 'Nano Tipper - Create'
+        subject = 'Banano Tipper - Create'
         response = handle_create(message)
     elif (parsed_text[0].lower() == 'send') or (parsed_text[0].lower() == 'withdraw'):
-        subject = 'Nano Tipper - Send'
+        subject = 'Banano Tipper - Send'
         print("send via PM")
         response = handle_send(message)
     elif parsed_text[0].lower() == 'history':
         print("history")
-        subject = 'Nano Tipper - History'
+        subject = 'Banano Tipper - History'
         response = handle_history(message)
     elif parsed_text[0].lower() == 'silence':
         print("silencing")
-        subject = 'Nano Tipper - Silence'
+        subject = 'Banano Tipper - Silence'
         response = handle_silence(message)
 
     # nanocenter donation commands
@@ -359,11 +359,11 @@ def handle_message(message):
             subject = 'Status'
             message = 'Check for Previous Messages: %s\n'%previous_message_check
     elif parsed_text[0].lower() == 'test_welcome_tipped':
-        subject = 'Nano Tipper - Welcome By Tip'
-        response = welcome_tipped % (0.01, 'xrb_3jy9954gncxbhuieujc3pg5t1h36e7tyqfapw1y6zukn9y1g6dj5xr7r6pij', 'xrb_3jy9954gncxbhuieujc3pg5t1h36e7tyqfapw1y6zukn9y1g6dj5xr7r6pij')
+        subject = 'Banano Tipper - Welcome By Tip'
+        response = welcome_tipped % (0.01, 'ban_3jy9954gncxbhuieujc3pg5t1h36e7tyqfapw1y6zukn9y1g6dj5xr7r6pij', 'ban_3jy9954gncxbhuieujc3pg5t1h36e7tyqfapw1y6zukn9y1g6dj5xr7r6pij')
     elif parsed_text[0].lower() == 'test_welcome_create':
-        subject = 'Nano Tipper - Create'
-        response = welcome_create % ('xrb_3jy9954gncxbhuieujc3pg5t1h36e7tyqfapw1y6zukn9y1g6dj5xr7r6pij', 'xrb_3jy9954gncxbhuieujc3pg5t1h36e7tyqfapw1y6zukn9y1g6dj5xr7r6pij')
+        subject = 'Banano Tipper - Create'
+        response = welcome_create % ('ban_3jy9954gncxbhuieujc3pg5t1h36e7tyqfapw1y6zukn9y1g6dj5xr7r6pij', 'ban_3jy9954gncxbhuieujc3pg5t1h36e7tyqfapw1y6zukn9y1g6dj5xr7r6pij')
 
     else:
         add_history_record(
@@ -389,7 +389,7 @@ def auto_receive():
     addresses = [str(result[1]) for result in myresult]
     private_keys = [str(result[2]) for result in myresult]
     mydb.commit()
-    pendings = get_pendings(addresses, threshold=nano_to_raw(program_minimum))
+    pendings = get_pendings(addresses, threshold=banoshi_to_raw(program_minimum))
     # get any pending blocks from our address
     for address, private_key in zip(addresses, private_keys):
         # allow 5 transactions to be received per cycle. If the bot gets transaction spammed, at least it won't be locked up receiving.
@@ -449,7 +449,7 @@ def check_inactive_transactions():
             print('generating a message for %s' % result)
 
             message_recipient = result
-            subject = 'Please Activate Your Nano Tipper Account'
+            subject = 'Please Activate Your Banano Tipper Account'
             message_text = "Somebody tipped you at least 30 days ago, but your account hasn't been activated yet.\n\nPlease activate your account by replying any command to this bot. If you do not, any tips 35 days or older will be returned.\n\n***\n\n"
             message_text += help_text
             sql = "INSERT INTO messages (username, subject, message) VALUES (%s, %s, %s)"
@@ -496,7 +496,7 @@ def check_inactive_transactions():
                 # send it back
                 donation_amount = int(txn[9])/10**30
                 donation_amount = donation_amount * percentage
-                donation_amount = nano_to_raw(donation_amount)
+                donation_amount = banoshi_to_raw(donation_amount)
 
                 return_amount = int(txn[9]) - donation_amount
 
@@ -505,7 +505,7 @@ def check_inactive_transactions():
                     add_history_record(action='return', hash=hash, amount=return_amount,
                                        notes='Returned transaction from history record %s' % txn[0])
                 if (donation_amount > 0) and (donation_amount <= int(txn[9])):
-                    hash2 = send(address, private_key, donation_amount, 'xrb_3jy9954gncxbhuieujc3pg5t1h36e7tyqfapw1y6zukn9y1g6dj5xr7r6pij')['hash']
+                    hash2 = send(address, private_key, donation_amount, 'ban_3jy9954gncxbhuieujc3pg5t1h36e7tyqfapw1y6zukn9y1g6dj5xr7r6pij')['hash']
                     add_history_record(action='donate', hash=hash2, amount=donation_amount,
                                        notes='Donation from returned tip %s' % txn[0])
                 # print("Returning a transaction. ", hash)
@@ -530,7 +530,7 @@ def check_inactive_transactions():
                 # send a message informing the tipper that the tip is being returned
                 message_recipient = txn[1]
                 subject = 'Returned your tip of %s to %s' % (int(txn[9])/10**30, result)
-                message_text = "Your tip to %s for %s Nano was returned since the user never activated their account, and %s percent of this was donated to the TipBot development fund. You can change this percentage by messaging the TipBot 'percentage <amount>', where <amount> is a number between 0 and 100." % (result, int(txn[9])/10**30, round(percentage*100, 2))
+                message_text = "Your tip to %s for %s Banano was returned since the user never activated their account, and %s percent of this was donated to the TipBot development fund. You can change this percentage by messaging the TipBot 'percentage <amount>', where <amount> is a number between 0 and 100." % (result, int(txn[9])/10**30, round(percentage*100, 2))
                 sql = "INSERT INTO messages (username, subject, message) VALUES (%s, %s, %s)"
                 val = (message_recipient, subject, message_text)
                 mycursor.execute(sql, val)
@@ -568,9 +568,9 @@ def check_inactive_transactions():
                 # print('History record: ', txn[0], address, private_key, txn[9], recipient_address)
 
                 # send it back
-                donation_amount = int(txn[9]) / 10 ** 30
+                donation_amount = int(txn[9]) / 10 ** 29
                 donation_amount = donation_amount * percentage
-                donation_amount = nano_to_raw(donation_amount)
+                donation_amount = banoshi_to_raw(donation_amount)
 
                 return_amount = int(txn[9]) - donation_amount
                 print('sending transaction')
@@ -581,7 +581,7 @@ def check_inactive_transactions():
                 print('sending donation')
                 if (donation_amount > 0) and (donation_amount <= int(txn[9])):
                     hash2 = send(address, private_key, donation_amount,
-                                 'xrb_3jy9954gncxbhuieujc3pg5t1h36e7tyqfapw1y6zukn9y1g6dj5xr7r6pij')['hash']
+                                 'ban_3jy9954gncxbhuieujc3pg5t1h36e7tyqfapw1y6zukn9y1g6dj5xr7r6pij')['hash']
                     add_history_record(action='donate', hash=hash2, amount=donation_amount,
                                        notes='Donation from returned tip %s' % txn[0])
                 print('sent')
@@ -595,9 +595,9 @@ def check_inactive_transactions():
 
                 # send a message informing the tipper that the tip is being returned
                 message_recipient = txn[1]
-                subject = 'Returned your tip of %s to %s' % (int(txn[9]) / 10 ** 30, result)
-                message_text = "Your tip to %s for %s Nano was returned since the user never activated their account, and %s percent of this was donated to the TipBot development fund. You can change this percentage by messaging the TipBot 'percentage <amount>', where <amount> is a number between 0 and 100." % (
-                result, int(txn[9]) / 10 ** 30, round(percentage * 100, 2))
+                subject = 'Returned your tip of %s to %s' % (int(txn[9]) / 10 ** 29, result)
+                message_text = "Your tip to %s for %s Banano was returned since the user never activated their account, and %s percent of this was donated to the TipBot development fund. You can change this percentage by messaging the TipBot 'percentage <amount>', where <amount> is a number between 0 and 100." % (
+                result, int(txn[9]) / 10 ** 29, round(percentage * 100, 2))
                 sql = "INSERT INTO messages (username, subject, message) VALUES (%s, %s, %s)"
                 val = (message_recipient, subject, message_text)
                 mycursor.execute(sql, val)
@@ -642,7 +642,7 @@ for action_item in stream_comments_messages():
                     if tip_bot_on:
                         handle_comment(action_item[1])
                     else:
-                        reddit.redditor(str(action_item[1].author)).message('Nano Tipper Currently Disabled', '[^(Nano Tipper is currently disabled)](https://www.reddit.com/r/nano_tipper/comments/astwp6/nano_tipper_status/)')
+                        reddit.redditor(str(action_item[1].author)).message('Banano Tipper Currently Disabled', '[^(Banano Tipper is currently disabled)]')
                 else:
                     print('Too many requests for %s' % action_item[1].author)
                 print('*****************************************************')
@@ -658,8 +658,8 @@ for action_item in stream_comments_messages():
                         else:
                             handle_comment(action_item[1], parsed_text=parsed_text[-2:])
                     else:
-                        reddit.redditor(str(action_item[1].author)).message('Nano Tipper Currently Disabled',
-                                                                            '[^(Nano Tipper is currently disabled)](https://www.reddit.com/r/nano_tipper/comments/astwp6/nano_tipper_status/)')
+                        reddit.redditor(str(action_item[1].author)).message('Banano Tipper Currently Disabled',
+                                                                            '[^(Banano Tipper is currently disabled)]')
                 else:
                     print('Too many requests for %s' % action_item[1].author)
                 print('*****************************************************')
@@ -676,8 +676,8 @@ for action_item in stream_comments_messages():
                         else:
                             handle_comment(action_item[1], parsed_text=parsed_text[-3:])
                     else:
-                        reddit.redditor(str(action_item[1].author)).message('Nano Tipper Currently Disabled',
-                                                                            '[^(Nano Tipper is currently disabled)](https://www.reddit.com/r/nano_tipper/comments/astwp6/nano_tipper_status/)')
+                        reddit.redditor(str(action_item[1].author)).message('Banano Tipper Currently Disabled',
+                                                                            '[^(Banano Tipper is currently disabled)]')
                 else:
                     print('Too many requests for %s' % action_item[1].author)
                 print('*****************************************************')
@@ -707,7 +707,7 @@ for action_item in stream_comments_messages():
                     handle_message(action_item[1])
                     print('*****************************************************')
             else:
-                action_item[1].reply('[^(Nano Tipper is currently disabled)](https://www.reddit.com/r/nano_tipper/comments/astwp6/nano_tipper_status/)')
+                action_item[1].reply('[^(Banano Tipper is currently disabled)]')
 
     elif action_item[0] == 'username mention':
         # print('Printing Username mention: ', parsed_text[0])
@@ -727,8 +727,8 @@ for action_item in stream_comments_messages():
                         handle_comment(action_item[1])
                         pass
                     else:
-                        reddit.redditor(str(action_item[1].author)).message('Nano Tipper Currently Disabled',
-                                                                            '[^(Nano Tipper is currently disabled)](https://www.reddit.com/r/nano_tipper/comments/astwp6/nano_tipper_status/)')
+                        reddit.redditor(str(action_item[1].author)).message('Banano Tipper Currently Disabled',
+                                                                            '[^(Banano Tipper is currently disabled)]')
                 else:
                     print('Too many requests for %s' % action_item[1].author)
                 print('*****************************************************')
@@ -740,8 +740,8 @@ for action_item in stream_comments_messages():
                     if tip_bot_on:
                         handle_comment(action_item[1], parsed_text=parsed_text[-2:])
                     else:
-                        reddit.redditor(str(action_item[1].author)).message('Nano Tipper Currently Disabled',
-                                                                            '[^(Nano Tipper is currently disabled)](https://www.reddit.com/r/nano_tipper/comments/astwp6/nano_tipper_status/)')
+                        reddit.redditor(str(action_item[1].author)).message('Banano Tipper Currently Disabled',
+                                                                            '[^(Banano Tipper is currently disabled)]')
                 else:
                     print('Too many requests for %s' % action_item[1].author)
                 print('*****************************************************')
@@ -752,5 +752,3 @@ for action_item in stream_comments_messages():
     if time.time()-t0 > 43200:
         t0 = time.time()
         check_inactive_transactions()
-
-
